@@ -1,6 +1,6 @@
-#include "glut.h"
-#include "glm\glm.hpp"
-#include "glm\gtc\constants.hpp"
+#include "GL/glut.h"
+#include "glm/glm.hpp"
+#include "glm/gtc/constants.hpp"
 
 #define WINDOW_WIDTH	(1280)
 #define WINDOW_HEIGHT	(720)
