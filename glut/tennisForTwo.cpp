@@ -22,13 +22,39 @@ typedef struct {
 
 glm::vec2 mousePosition;
 BALL ball;
+glm::vec2 netPositions[2] = {
+	{WINDOW_WIDTH / 2, GROUND_Y},
+	{WINDOW_WIDTH / 2, GROUND_Y - 100}
+};
 
 glm::vec2 servePositions[PLAYER_MAX] = {
-	{100,					GROUND_Y - 100},	//PLAYER1
+	{100,			GROUND_Y - 100},	//PLAYER1
 	{WINDOW_WIDTH - 100,	GROUND_Y - 100}		//PLAYER2	
 };
 
-// youtube -37:09
+// youtube 47:09
+float cross(glm::vec2 _v0, glm::vec2 _v1) {
+	return _v0.x * _v1.y - _v1.x * _v0.y;
+}
+
+bool IntersectLineSegment(glm::vec2 _v0Start, glm::vec2 _v0End, glm::vec2 _v1Start, glm::vec2 _v1End) {
+	glm::vec2 v0 = _v0End - _v0Start;// v0のベクトル。（end からstartの除算)
+	glm::vec2 v0StartTov1Start = _v1Start - _v0Start;
+	glm::vec2 v0StartTov1End = _v1End - _v0Start;
+	float cross0 = cross(v0, v0StartTov1Start);
+	float cross1 = cross(v0, v0StartTov1End);
+	if (cross0 * cross1 < 0) {
+		glm::vec2 v1 = _v1End - _v1Start;// v1のベクトル。（end からstartの除算)
+		glm::vec2 v1StartTov0Start = _v0Start - _v1Start;
+		glm::vec2 v1StartTov0End = _v0End - _v1Start;
+		float cross2 = cross(v1, v1StartTov0Start);
+		float cross3 = cross(v1, v1StartTov0End);
+		if (cross2 * cross3 < 0)
+			return true;
+	}
+	return false;
+}
+
 
 
 void Display() {
@@ -50,11 +76,15 @@ void Display() {
 	glEnable(GL_BLEND);
 
 	glColor3ub(0x00, 0xff, 0xff);
-
 	glBegin(GL_LINES);
 	{
 		glVertex2f(0, GROUND_Y);
 		glVertex2f(WINDOW_WIDTH, GROUND_Y);
+
+//		if (IntersectLineSegment(mousePosition, ball.positions[0], netPositions[0], netPositions[1]))
+//			glColor3ub(0xff, 0xff, 0x00);
+		glVertex2fv((GLfloat*)&netPositions[0]);
+		glVertex2fv((GLfloat*)&netPositions[1]);
 	}
 	glEnd();
 
@@ -63,6 +93,14 @@ void Display() {
 	{
 		glVertex2fv((GLfloat*)&mousePosition);
 		glVertex2fv((GLfloat*)&ball.positions[0]);
+	}
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+	for (int i = 0; i < BALL_POSITION_MAX; i++) {
+		float a = (float)(BALL_POSITION_MAX - i) / BALL_POSITION_MAX * 0.5f;
+		glColor4f(0, 1, 1, a);
+		glVertex2fv((GLfloat*)&ball.positions[i]);
 	}
 	glEnd();
 
@@ -90,6 +128,12 @@ void Display() {
 }
 
 void Idle() {
+	for (int i = BALL_POSITION_MAX -1; i > 0; i--) { 
+		ball.positions[i] = ball.positions[i - 1];
+	}
+
+	glm::vec2 lastBallPosition = ball.positions[0];
+
 	ball.velocity.y += 0.02f;
 
 	ball.positions[0] += ball.velocity;
@@ -97,6 +141,14 @@ void Idle() {
 	if (ball.positions[0].y > GROUND_Y) {
 		ball.positions[0].y = GROUND_Y;
 		ball.velocity.y *= -0.5f;
+	}
+
+	{
+//不要になったが（ボールベクトルの求め方）glm::vec2 v = ball.positions[0] - lastBallPosition;
+		if (IntersectLineSegment(lastBallPosition, ball.positions[0], netPositions[0], netPositions[1])) {
+			ball.positions[0].x = lastBallPosition.x;
+			ball.velocity.x *= -0.5f;
+		}
 	}
 
 	glutPostRedisplay();
