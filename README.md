@@ -5,4 +5,5 @@
 にて蹴られる。  
 > git fetch  
 > git merge origin/main  
+
 再度 git push　にて解決。
